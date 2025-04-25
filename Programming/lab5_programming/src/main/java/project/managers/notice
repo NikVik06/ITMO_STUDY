@@ -1,0 +1,3 @@
+StatefulBeanToCsv<HumanBeing> firstBeanToCsv = new StatefulBeanToCsvBuilder<HumanBeing>(writer)
+                    .withApplyQuotesToAll(true)
+                    .build();

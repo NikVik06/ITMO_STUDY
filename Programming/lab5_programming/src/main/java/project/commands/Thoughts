@@ -1,0 +1,15 @@
+// Специфичные команды для HumanBeing
+    public void removeAllByMood(Mood mood) {
+        collection.removeIf(h -> mood.equals(h.getMood()));
+    }
+
+    public void removeLower(HumanBeing human) {
+        collection.removeIf(h -> h.compareTo(human) < 0);
+    }
+
+    public boolean addIfMax(HumanBeing human) {
+        if (collection.isEmpty() || human.compareTo(collection.last()) > 0) {
+            return collection.add(human);
+        }
+        return false;
+    }

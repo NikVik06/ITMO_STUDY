@@ -1,0 +1,13 @@
+add
+JohnDoe
+100
+50
+2023-01-15T10:30:00+03:00
+true
+true
+3
+Main theme
+5
+GLOOM
+BMW
+true
