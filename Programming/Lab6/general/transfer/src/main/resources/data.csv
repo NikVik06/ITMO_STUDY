@@ -1,0 +1,15 @@
+NAME,COORDINATES,CREATIONDATE,REALHERO,HASTOOTHPICK,IMPACTSPEED,SOUNDTRACKNAME,MINUTESOFWAITING,MOOD,CAR
+JohnDoe,"(100, 50.0)",2025-05-07T16:37:52.210363500+03:00[Europe/Moscow],true,true,3.0,Main theme,5,GLOOM,true
+Ben,"(150, 1000.0)",2025-05-07T16:37:52.213896900+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false
+Vivian,"(18, 51.0)",2025-05-07T16:37:52.214984900+03:00[Europe/Moscow],false,true,2.0,Sad theme,5,APATHY,true
+JohnDoe,"(100, 50.0)",2025-05-07T16:37:52.270335800+03:00[Europe/Moscow],true,true,3.0,Main theme,5,GLOOM,true
+Ben,"(150, 1000.0)",2025-05-07T16:37:52.271336100+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false
+Vivian,"(18, 51.0)",2025-05-07T16:37:52.271336100+03:00[Europe/Moscow],false,true,2.0,Sad theme,5,APATHY,true
+JohnDoe,"(100, 50.0)",2025-05-07T16:37:52.282950300+03:00[Europe/Moscow],true,true,3.0,Main theme,5,GLOOM,true
+Ben,"(150, 1000.0)",2025-05-07T16:37:52.284167100+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false
+Vivian,"(18, 51.0)",2025-05-07T16:37:52.285461300+03:00[Europe/Moscow],false,true,2.0,Sad theme,5,APATHY,true
+JohnDoe,"(100, 50.0)",2025-05-07T16:37:52.296559200+03:00[Europe/Moscow],true,true,3.0,Main theme,5,GLOOM,true
+Ben,"(150, 1000.0)",2025-05-07T16:37:52.298073400+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false
+Vivian,"(18, 51.0)",2025-05-07T16:37:52.299083400+03:00[Europe/Moscow],false,true,2.0,Sad theme,5,APATHY,true
+73573,"(180, 516.0)",2025-05-07T16:37:52.299083400+03:00[Europe/Moscow],true,true,3621.0,643,5,CALM,true
+

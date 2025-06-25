@@ -1,0 +1,25 @@
+<configuration>
+    <!-- Логи выводятся в консоль -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Логи пишутся в файл -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/server.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Уровень логирования (TRACE, DEBUG, INFO, WARN, ERROR) -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+    <!-- Можно настроить отдельный уровень для определённых классов -->
+    <logger name="server" level="DEBUG" />
+</configuration>

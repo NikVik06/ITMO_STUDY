@@ -1,0 +1,7 @@
+NAME,COORDINATES,CREATIONDATE,REALHERO,HASTOOTHPICK,IMPACTSPEED,SOUNDTRACKNAME,MINUTESOFWAITING,MOOD,CAR
+chlen,"(432, 37.0)",2025-06-25T00:19:38.464355800+03:00[Europe/Moscow],true,true,2141.0,qfew,234,CALM,true
+JohnDoe,"(100, 50.0)",2025-06-25T13:06:24.917187900+03:00[Europe/Moscow],true,true,3.0,Main theme,5,GLOOM,true
+xyi,"(421, 412.0)",2025-06-25T00:13:05.518893500+03:00[Europe/Moscow],true,true,31.0,f,34,CALM,true
+Ben,"(150, 1000.0)",2025-06-25T00:09:56.667453300+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false
+Vivian,"(18, 51.0)",2025-06-25T13:06:25.115553800+03:00[Europe/Moscow],false,true,2.0,Sad theme,5,APATHY,true
+Ben,"(150, 1000.0)",2025-06-25T13:06:25.000121+03:00[Europe/Moscow],false,false,30.0,New theme,10,CALM,false

@@ -1,0 +1,103 @@
+add
+JohnDoe
+100
+50
+true
+true
+3
+Main theme
+5
+GLOOM
+true
+add
+Ben
+150
+1000
+false
+false
+30
+New theme
+10
+CALM
+false
+add
+Vivian
+18
+51
+false
+true
+2
+Sad theme
+5
+APATHY
+true
+save
+add
+JohnDoe
+100
+50
+true
+true
+3
+Main theme
+5
+GLOOM
+true
+add
+Ben
+150
+1000
+false
+false
+30
+New theme
+10
+CALM
+false
+add
+Vivian
+18
+51
+false
+true
+2
+Sad theme
+5
+APATHY
+true
+save
+add
+JohnDoe
+100
+50
+true
+true
+3
+Main theme
+5
+GLOOM
+true
+add
+Ben
+150
+1000
+false
+false
+30
+New theme
+10
+CALM
+false
+add
+Vivian
+18
+51
+false
+true
+2
+Sad theme
+5
+APATHY
+true
+save
+execute_script script1.txt
