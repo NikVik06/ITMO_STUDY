@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="216e6026-02e1-4501-a0ff-1a8416a16589" name="Changes" comment="something new">
+      <change beforePath="$PROJECT_DIR$/src/main/java/server/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/server/Main.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="Web_lab_1_4" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/.." value="master_1" />
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/main/java/server/Main.java" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="33hcCLTqvedL4NJcJRCv3PMLtdT" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "additional-task",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/nikol/IdeaProjects/Web_prog/Web_lab_1_4/top_build",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
+  },
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "TEXT"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\top_build" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\src\javascript" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\static" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\static\styles" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\static" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\src\javascript" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\src" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\src\purescript" />
+      <recent name="C:\Users\nikol\IdeaProjects\Web_prog\Web_lab_1_4\static\styles" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="216e6026-02e1-4501-a0ff-1a8416a16589" name="Changes" comment="" />
+      <created>1759772617209</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1759772617209</updated>
+    </task>
+    <task id="LOCAL-00001" summary="1.0">
+      <option name="closed" value="true" />
+      <created>1760273205538</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1760273205538</updated>
+    </task>
+    <task id="LOCAL-00002" summary="1.0">
+      <option name="closed" value="true" />
+      <created>1760273657108</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1760273657108</updated>
+    </task>
+    <task id="LOCAL-00003" summary="best shit">
+      <option name="closed" value="true" />
+      <created>1760274140864</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1760274140864</updated>
+    </task>
+    <task id="LOCAL-00004" summary="shit">
+      <option name="closed" value="true" />
+      <created>1760274147632</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1760274147632</updated>
+    </task>
+    <task id="LOCAL-00005" summary="somethig new">
+      <option name="closed" value="true" />
+      <created>1760274215213</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1760274215213</updated>
+    </task>
+    <task id="LOCAL-00006" summary="new">
+      <option name="closed" value="true" />
+      <created>1760274870877</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1760274870877</updated>
+    </task>
+    <task id="LOCAL-00007" summary="new">
+      <option name="closed" value="true" />
+      <created>1760274899813</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1760274899813</updated>
+    </task>
+    <task id="LOCAL-00008" summary="something new">
+      <option name="closed" value="true" />
+      <created>1761293132646</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1761293132646</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="HEAD" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="master" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="additional-task" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/.." />
+    </ignored-roots>
+    <MESSAGE value="1.0" />
+    <MESSAGE value="best shit" />
+    <MESSAGE value="shit" />
+    <MESSAGE value="somethig new" />
+    <MESSAGE value="new" />
+    <MESSAGE value="something new" />
+    <option name="LAST_COMMIT_MESSAGE" value="something new" />
+  </component>
+</project>
