@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+}
+
+group = 'server'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation files('./libs/fastcgi-lib.jar')
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'server.Main'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    archiveFileName = 'server.jar'
+}

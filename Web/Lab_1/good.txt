@@ -1,0 +1,1205 @@
+module Main where
+
+import Prelude
+
+import Control.Monad.Reader (ReaderT, runReaderT)
+import Data.Traversable (for_, traverse)
+import Data.Argonaut (class DecodeJson, class EncodeJson, Json, decodeJson, encodeJson, stringify, (.:))
+import Data.Array (catMaybes, length, mapMaybe)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Number (fromString)
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import Effect.Ref as Ref
+import Web.DOM.Document (createElement)
+import Web.DOM.Document (toParentNode) as Document
+import Web.HTML.HTMLInputElement (HTMLInputElement, fromElement, value)
+import Web.DOM.Element (Element, toNode, setAttribute, removeAttribute, getAttribute, toEventTarget, fromNode)
+import Web.DOM.Element (toParentNode) as Element
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.DOM.Node (Node, appendChild, firstChild, insertBefore, textContent, setTextContent)
+import Web.DOM.ParentNode (QuerySelector(..), querySelector, querySelectorAll)
+import Web.Event.Event (EventType(..))
+import Web.Event.EventTarget (addEventListener, eventListener)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument as HTMLDocument
+import Web.HTML.Window (document)
+import Web.DOM.NodeList (toArray) as NodeList
+
+
+-- Типы данных
+type AppState =
+  { x :: Number
+  , y :: Maybe Number
+  , r :: Array Number
+  }
+
+type ServerResponse =
+  { result :: Boolean
+  , now :: String
+  , time :: Number
+  }
+
+-- Используем newtype вместо type для StoredResult
+newtype StoredResult = StoredResult
+  { x :: Number
+  , y :: Number
+  , r :: Number
+  , time :: String
+  , execTime :: String
+  , result :: String
+  }
+
+-- ReaderT монада для управления состоянием
+type AppM = ReaderT AppState Aff
+
+-- Инициализация приложения
+main :: Effect Unit
+main = do
+  log "PureScript загружен."
+  launchAff_ $ do
+    doc <- liftEffect $ document =<< window
+    runReaderT (initApplication doc) initialAppState
+
+initialAppState :: AppState
+initialAppState = { x: 0.0, y: Nothing, r: [] }
+
+initApplication :: HTMLDocument.HTMLDocument -> AppM Unit
+initApplication doc = do
+  liftEffect $ log "Инициализация приложения..."
+  liftEffect $ initEventHandlers doc
+  liftEffect restoreHistory
+  liftEffect $ log "Приложение инициализировано!"
+
+-- Обработчики событий
+initEventHandlers :: HTMLDocument.HTMLDocument -> Effect Unit
+initEventHandlers doc = do
+  log "Инициализация обработчиков событий..."
+  initXInput doc  -- ← РАСКОММЕНТИРОВАТЬ!
+  initYButtons doc
+  initRCheckboxes doc
+  initFormSubmit doc
+
+initXInput :: HTMLDocument.HTMLDocument -> Effect Unit
+initXInput doc = do
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode doc)
+  case maybeElement of
+    Nothing ->
+      log "Элемент #x не найден"
+    Just element -> do
+      let maybeInput = fromElement element -- чистая функция, без bind/Effect
+      case maybeInput of
+        Nothing ->
+          log "Элемент #x найден, но он не input"
+        Just input -> do
+          listener <- eventListener \_ -> do
+            val <- value input
+            log $ "X изменен: " <> val
+          addEventListener (EventType "input") listener false (toEventTarget element)
+
+
+getXValue :: Effect Number
+getXValue = do
+  doc <- document =<< window
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode doc)
+  case maybeElement of
+    Nothing -> pure 0.0
+    Just element -> do
+      let maybeHtmlInput = fromElement element  -- чистая функция, не монадическая
+      case maybeHtmlInput of
+        Nothing -> pure 0.0
+        Just htmlInput -> do
+          currentValue <- value htmlInput
+          pure $ fromMaybe 0.0 (parseNumber currentValue)
+
+initYButtons :: HTMLDocument.HTMLDocument -> Effect Unit
+initYButtons doc = do
+  let parentNode = Document.toParentNode (HTMLDocument.toDocument doc)
+  maybeButtonsContainer <- querySelector (QuerySelector ".y-buttons") parentNode
+  case maybeButtonsContainer of
+    Just container -> do
+      let containerParent = Element.toParentNode container
+      nodeList <- querySelectorAll (QuerySelector ".y-btn") containerParent
+      nodes <- NodeList.toArray nodeList
+      let buttons = mapMaybe fromNode nodes
+      for_ buttons $ \button -> do
+        listener <- eventListener $ \_ -> do
+          text <- textContent (toNode button)
+          log $ "Кнопка Y нажата: " <> text
+          -- Сброс стилей других кнопок
+          for_ buttons $ \btn -> do
+            setAttribute "style" "background-color: ''; color: ''" btn
+            removeAttribute "active" btn
+          -- Установка стилей для активной кнопки
+          setAttribute "style" "background-color: #3498db; color: white" button
+          setAttribute "active" "true" button
+        addEventListener (EventType "click") listener false (toEventTarget button)
+    Nothing -> log "Контейнер кнопок Y не найден"
+
+initRCheckboxes :: HTMLDocument.HTMLDocument -> Effect Unit
+initRCheckboxes doc = do
+  let parentNode = Document.toParentNode (HTMLDocument.toDocument doc)
+  maybeContainer <- querySelector (QuerySelector "form") parentNode
+  case maybeContainer of
+    Just container -> do
+      let containerParent = Element.toParentNode container
+      nodeList <- querySelectorAll (QuerySelector "input[name=\"r\"]") containerParent
+      nodes <- NodeList.toArray nodeList
+      let checkboxes = mapMaybe fromNode nodes
+      for_ checkboxes $ \checkbox -> do
+        listener <- eventListener $ \_ -> do
+          log "Чекбокс R изменен"
+        addEventListener (EventType "change") listener false (toEventTarget checkbox)
+    Nothing -> log "Контейнер чекбоксов R не найден"
+
+initFormSubmit :: HTMLDocument.HTMLDocument -> Effect Unit
+initFormSubmit doc = do
+  maybeForm <- getElementById "point-form" (HTMLDocument.toNonElementParentNode doc)
+  case maybeForm of
+    Just form -> do
+      listener <- eventListener $ \_ -> do
+        launchAff_ $ do
+          currentState <- getCurrentState doc
+          case validateState currentState of
+            Left errorMsg -> do
+              liftEffect $ log $ "Ошибка валидации: " <> errorMsg
+              liftEffect $ alert errorMsg
+            Right validatedState -> do
+              for_ validatedState.r $ \r -> do
+                processRequest validatedState.x validatedState.y r doc
+      addEventListener (EventType "submit") listener false (toEventTarget form)
+    Nothing -> log "Форма не найдена"
+
+
+-- Получение текущего состояния
+getCurrentState :: HTMLDocument.HTMLDocument -> Aff AppState
+getCurrentState doc = do
+  x <- liftEffect $ getXValue
+  y <- liftEffect $ getYValue doc
+  r <- liftEffect $ getRValues doc
+  pure { x, y, r }
+
+
+getYValue :: HTMLDocument.HTMLDocument -> Effect (Maybe Number)
+getYValue doc = do
+  let parentNode = Document.toParentNode (HTMLDocument.toDocument doc)
+  maybeActiveBtn <- querySelector (QuerySelector ".y-btn[active=\"true\"]") parentNode
+  case maybeActiveBtn of
+    Just btn -> do
+      text <- textContent (toNode btn)
+      pure $ parseNumber text
+    Nothing -> pure Nothing
+
+getRValues :: HTMLDocument.HTMLDocument -> Effect (Array Number)
+getRValues doc = do
+  let parentNode = Document.toParentNode (HTMLDocument.toDocument doc)
+  maybeContainer <- querySelector (QuerySelector "form") parentNode
+  case maybeContainer of
+    Just container -> do
+      let containerParent = Element.toParentNode container
+      nodeList <- querySelectorAll (QuerySelector "input[name=\"r\"]:checked") containerParent
+      nodes <- NodeList.toArray nodeList
+      let checkboxes = mapMaybe fromNode nodes
+      values <- traverse (\el -> do
+        value <- getAttribute "value" el
+        pure $ parseNumber =<< value) checkboxes
+      pure $ catMaybes values
+    Nothing -> pure []
+
+-- Вспомогательные функции
+parseNumber :: String -> Maybe Number
+parseNumber str = fromString str
+
+-- Валидация
+validateState :: AppState -> Either String { x :: Number, y :: Number, r :: Array Number }
+validateState state = do
+  if state.x < -5.0 || state.x > 3.0
+    then Left "X должен быть в диапазоне от -5 до 3"
+    else pure unit
+  y <- case state.y of
+    Just value -> Right value
+    Nothing -> Left "Выберите значение Y"
+  if state.r == []
+    then Left "Выберите хотя бы одно значение R"
+    else pure unit
+  Right { x: state.x, y, r: state.r }
+
+-- Обработка запросов
+processRequest :: Number -> Number -> Number -> HTMLDocument.HTMLDocument -> Aff Unit
+processRequest x y r doc = do
+  liftEffect $ removeNoResultsMessage doc
+  result <- makeServerRequest x y r
+  liftEffect $ addResultToTable result doc
+  liftEffect $ storeResult result
+
+makeServerRequest :: Number -> Number -> Number -> Aff StoredResult
+makeServerRequest x y r = do
+  liftEffect $ log $ "Запрос к серверу: x=" <> show x <> ", y=" <> show y <> ", r=" <> show r
+  -- Временно возвращаем заглушку
+  let hitResult = x * x + y * y <= r * r  -- Простая проверка попадания в круг
+  pure $ StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: "2024-01-01T00:00:00Z"
+    , execTime: "100.0 ns"
+    , result: show hitResult
+    }
+
+createSuccessResult :: Number -> Number -> Number -> ServerResponse -> StoredResult
+createSuccessResult x y r serverResponse =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: serverResponse.now
+    , execTime: show serverResponse.time <> " ns"
+    , result: show serverResponse.result
+    }
+
+createErrorResult :: Number -> Number -> Number -> StoredResult
+createErrorResult x y r =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: "N/A"
+    , execTime: "N/A"
+    , result: "network error"
+    }
+
+-- Работа с DOM
+removeNoResultsMessage :: HTMLDocument.HTMLDocument -> Effect Unit
+removeNoResultsMessage doc = do
+  let parentNode = Document.toParentNode (HTMLDocument.toDocument doc)
+  maybeNoResults <- querySelector (QuerySelector ".no-results") parentNode
+  case maybeNoResults of
+    Just element -> removeElement (toNode element)
+    Nothing -> pure unit
+
+-- Вспомогательная функция для извлечения данных из StoredResult
+unwrapResult :: StoredResult -> { x :: Number, y :: Number, r :: Number, time :: String, execTime :: String, result :: String }
+unwrapResult (StoredResult r) = r
+
+addResultToTable :: StoredResult -> HTMLDocument.HTMLDocument -> Effect Unit
+addResultToTable storedResult doc = do
+  let result = unwrapResult storedResult
+  maybeTbody <- getElementById "results-body" (HTMLDocument.toNonElementParentNode doc)
+  case maybeTbody of
+    Just tbody -> do
+      row <- createElement "tr" (HTMLDocument.toDocument doc)
+
+      let cells = [ show result.x, show result.y, show result.r,
+                    result.result, result.time, result.execTime ]
+
+      for_ cells $ \cellText -> do
+        cell <- createElement "td" (HTMLDocument.toDocument doc)
+        setTextContent cellText (toNode cell)
+        void $ appendChild (toNode cell) (toNode row)
+
+      -- Добавляем класс в зависимости от результата
+      if result.result == "true" then
+        setAttribute "class" "hit" row
+      else
+        setAttribute "class" "miss" row
+
+      -- Вставляем в начало таблицы
+      firstChild' <- firstChild (toNode tbody)
+      case firstChild' of
+        Just child -> void $ insertBefore (toNode row) child (toNode tbody)
+        Nothing -> void $ appendChild (toNode row) (toNode tbody)
+    Nothing -> log "Таблица результатов не найдена"
+
+
+storeResult :: StoredResult -> Effect Unit
+storeResult result = do
+  previous <- _getItem "results"
+  let prevResults = case previous of
+        Just str -> fromMaybe [] (parseJSON str)
+        Nothing -> []
+      newResults = [result] <> prevResults
+  _setItem "results" (stringify (encodeJson newResults))
+
+restoreHistory :: Effect Unit
+restoreHistory = do
+  log "Восстанавливаем историю..."
+  maybeResults <- _getItem "results"
+  case maybeResults of
+    Just str -> case parseJSON str of
+      Just results -> do
+        log $ "Найдено записей в истории: " <> show (length results)
+        doc <- document =<< window
+        for_ results $ \result -> addResultToTable result doc
+      Nothing -> log "Ошибка парсинга истории"
+    Nothing -> log "История не найдена"
+
+-- JSON экземпляры для StoredResult
+instance encodeJsonStoredResult :: EncodeJson StoredResult where
+  encodeJson (StoredResult result) = encodeJson
+    { x: result.x
+    , y: result.y
+    , r: result.r
+    , time: result.time
+    , execTime: result.execTime
+    , result: result.result
+    }
+
+instance decodeJsonStoredResult :: DecodeJson StoredResult where
+  decodeJson json = do
+    obj <- decodeJson json
+    x <- obj .: "x"
+    y <- obj .: "y"
+    r <- obj .: "r"
+    time <- obj .: "time"
+    execTime <- obj .: "execTime"
+    resultStr <- obj .: "result"
+    pure $ StoredResult { x, y, r, time, execTime, result: resultStr }
+
+parseJSON :: String -> Maybe (Array StoredResult)
+parseJSON str = case parseJsonString str of
+  Right json -> case decodeJson json of
+    Right arr -> Just arr
+    Left _ -> Nothing
+  Left _ -> Nothing
+
+foreign import parseJsonString :: String -> Either String Json
+foreign import removeElement :: Node -> Effect Unit
+
+-- Foreign imports для localStorage
+foreign import _getItem :: String -> Effect (Maybe String)
+foreign import _setItem :: String -> String -> Effect Unit
+
+-- Foreign import для alert
+foreign import alert :: String -> Effect Unit
+
+18:03 build
+module Main where
+
+import Prelude
+
+import Control.Monad.Reader (ReaderT)
+import Data.Argonaut (class DecodeJson, class EncodeJson, Json, decodeJson, encodeJson, stringify, (.:))
+import Data.Either (Either(..))
+import Data.Traversable (for_, traverse, traverse_)
+import Data.Array (catMaybes, length, mapMaybe, nub, filter)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Number (fromString)
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import Effect.Ref (Ref)
+import Effect.Ref as Ref
+import Web.DOM.Document (Document, createElement, toParentNode)
+import Web.HTML.HTMLInputElement (HTMLInputElement, fromElement, value, checked)
+import Web.DOM.Element (Element, toNode, setAttribute, removeAttribute, getAttribute, toEventTarget, fromNode)
+import Web.DOM.Element (toParentNode) as Element
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.DOM.Node (Node, appendChild, firstChild, insertBefore, textContent, setTextContent)
+import Web.DOM.ParentNode (QuerySelector(..), querySelector, querySelectorAll)
+import Web.Event.Event (EventType(..))
+import Web.Event.EventTarget (addEventListener, eventListener)
+import Web.HTML (window)
+import Web.HTML.Window (document)
+import Web.HTML.HTMLDocument as HTMLDocument
+import Web.DOM.NodeList (toArray) as NodeList
+import Web.Event.Internal.Types (Event)
+
+
+-- Типы данных
+type AppState =
+  { x :: Number
+  , y :: Maybe Number
+  , r :: Array Number
+  }
+
+initAppState :: Effect (Ref AppState)
+initAppState = Ref.new { x: 0.0, y: Nothing, r: [] }
+
+type ServerResponse =
+  { result :: Boolean
+  , now :: String
+  , time :: Number
+  }
+
+-- Используем newtype вместо type для StoredResult
+newtype StoredResult = StoredResult
+  { x :: Number
+  , y :: Number
+  , r :: Number
+  , time :: String
+  , execTime :: String
+  , result :: String
+  }
+
+-- ReaderT монада для управления состоянием
+type AppM = ReaderT AppState Aff
+
+-- Инициализация приложения
+main :: Effect Unit
+main = do
+  log "Starting PureScript app..."
+  htmlDoc <- document =<< window   -- теперь htmlDoc :: HTMLDocument
+  let doc = HTMLDocument.toDocument htmlDoc
+  appStateRef <- initAppState
+
+  initXInput appStateRef
+  initYButtons appStateRef doc
+  initRCheckboxes appStateRef doc
+  initFormSubmit appStateRef
+
+  log "Initialization complete."
+
+initialAppState :: AppState
+initialAppState = { x: 0.0, y: Nothing, r: [] }
+
+initApplication :: HTMLDocument.HTMLDocument -> AppM Unit
+initApplication doc = do
+  liftEffect $ log "Инициализация приложения..."
+  liftEffect $ initEventHandlers doc
+  liftEffect restoreHistory
+  liftEffect $ log "Приложение инициализировано!"
+
+-- Обработчики событий
+initEventHandlers :: HTMLDocument.HTMLDocument -> Effect Unit
+initEventHandlers htmlDoc = do
+  log "Инициализация обработчиков событий..."
+  let doc = HTMLDocument.toDocument htmlDoc
+  appStateRef <- initAppState
+  initXInput appStateRef
+  initYButtons appStateRef doc
+  initRCheckboxes appStateRef doc
+  initFormSubmit appStateRef
+
+initXInput :: Ref AppState -> Effect Unit
+initXInput appStateRef = do
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeElement of
+    Nothing -> log "x input not found"
+    Just element -> do
+      let maybeHtmlInput = fromElement element
+      case maybeHtmlInput of
+        Nothing -> log "x is not input"
+        Just htmlInput -> do
+          listener <- eventListener \_ -> do
+            val <- value htmlInput
+            let parsed = fromMaybe 0.0 (parseNumber val)
+            Ref.modify_ (_ { x = parsed }) appStateRef
+          void $ addEventListener (EventType "input") listener false (toEventTarget element)
+
+
+getXValue :: Effect Number
+getXValue = do
+  doc <- document =<< window
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode doc)
+  case maybeElement of
+    Nothing -> pure 0.0
+    Just element -> do
+      let maybeHtmlInput = fromElement element  -- чистая функция, не монадическая
+      case maybeHtmlInput of
+        Nothing -> pure 0.0
+        Just htmlInput -> do
+          currentValue <- value htmlInput
+          pure $ fromMaybe 0.0 (parseNumber currentValue)
+
+initYButtons :: Ref AppState -> Document -> Effect Unit
+initYButtons appStateRef doc = do
+  nodeList <- querySelectorAll (QuerySelector ".y-btn") (toParentNode doc)
+  nodes <- NodeList.toArray nodeList
+  let buttons = mapMaybe fromNode nodes  -- Преобразуем Node в Element
+  traverse_ (\btnElement -> do
+    listener <- eventListener \_ -> do
+      maybeVal <- getAttribute "data-value" btnElement
+      case maybeVal of
+        Nothing -> pure unit
+        Just valStr -> do
+          let parsed = parseNumber valStr
+          case parsed of
+            Nothing -> pure unit
+            Just yNum -> do
+              -- обновляем состояние
+              Ref.modify_ (_ { y = Just yNum }) appStateRef
+              -- визуально отмечаем выбранную кнопку
+              setAttribute "active" "true" btnElement
+              log $ "Selected Y = " <> show yNum
+    void $ addEventListener (EventType "click") listener false (toEventTarget btnElement)
+  ) buttons
+
+initRCheckboxes :: Ref AppState -> Document -> Effect Unit
+initRCheckboxes appStateRef doc = do
+  nodeList <- querySelectorAll (QuerySelector ".r-checkbox") (toParentNode doc)
+  nodes <- NodeList.toArray nodeList
+  let checkboxes = mapMaybe fromNode nodes  -- Преобразуем Node в Element
+  traverse_ (\cbElement -> do
+    let maybeHtmlInput = fromElement cbElement
+    case maybeHtmlInput of
+      Nothing -> pure unit
+      Just htmlInput -> do
+        listener <- eventListener \_ -> do
+          isChecked <- checked htmlInput
+          maybeVal <- getAttribute "value" cbElement
+          case maybeVal >>= parseNumber of
+            Nothing -> pure unit
+            Just rVal -> do
+              Ref.modify_ (\st ->
+                let newR = if isChecked
+                           then nub (st.r <> [rVal])
+                           else filter (_ /= rVal) st.r
+                in st { r = newR }
+              ) appStateRef
+        void $ addEventListener (EventType "change") listener false (toEventTarget cbElement)
+  ) checkboxes
+
+initFormSubmit :: Ref AppState -> Effect Unit
+initFormSubmit appStateRef = do
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeForm <- getElementById "form" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeForm of
+    Nothing -> log "Form not found"
+    Just form -> do
+      listener <- eventListener \e -> do
+        preventDefault e
+        state <- Ref.read appStateRef
+        case validateState state of
+          Left err -> alert err
+          Right _ -> do
+            for_ state.r \rVal -> do
+              launchAff_ do
+                void $ processRequest state.x (fromMaybe 0.0 state.y) rVal (HTMLDocument.toDocument htmlDoc)
+                liftEffect $ log $ "Request processed for R=" <> show rVal
+      void $ addEventListener (EventType "submit") listener false (toEventTarget form)
+
+
+-- Получение текущего состояния
+getCurrentState :: Document -> Aff AppState
+getCurrentState doc = do
+  x <- liftEffect $ getXValue
+  y <- liftEffect $ getYValue doc
+  r <- liftEffect $ getRValues doc
+  pure { x, y, r }
+
+
+getYValue :: Document -> Effect (Maybe Number)
+getYValue doc = do
+  let parentNode = toParentNode doc
+  maybeActiveBtn <- querySelector (QuerySelector ".y-btn[active=\"true\"]") parentNode
+  case maybeActiveBtn of
+    Just btn -> do
+      text <- textContent (toNode btn)
+      pure $ parseNumber text
+    Nothing -> pure Nothing
+
+getRValues :: Document -> Effect (Array Number)
+getRValues doc = do
+  let parentNode = toParentNode doc
+  maybeContainer <- querySelector (QuerySelector "form") parentNode
+  case maybeContainer of
+    Just container -> do
+      let containerParent = Element.toParentNode container
+      nodeList <- querySelectorAll (QuerySelector "input[name=\"r\"]:checked") containerParent
+      nodes <- NodeList.toArray nodeList
+      let checkboxes = mapMaybe fromNode nodes
+      values <- traverse (\el -> do
+        value <- getAttribute "value" el
+        pure $ parseNumber =<< value) checkboxes
+      pure $ catMaybes values
+    Nothing -> pure []
+
+-- Вспомогательные функции
+parseNumber :: String -> Maybe Number
+parseNumber str = fromString str
+
+-- Валидация
+validateState :: AppState -> Either String { x :: Number, y :: Number, r :: Array Number }
+validateState state = do
+  if state.x < -5.0 || state.x > 3.0
+    then Left "X должен быть в диапазоне от -5 до 3"
+    else pure unit
+  y <- case state.y of
+    Just value -> Right value
+    Nothing -> Left "Выберите значение Y"
+  if state.r == []
+    then Left "Выберите хотя бы одно значение R"
+    else pure unit
+  Right { x: state.x, y, r: state.r }
+
+-- Обработка запросов
+processRequest :: Number -> Number -> Number -> Document -> Aff StoredResult
+processRequest x y r doc = do
+  liftEffect $ removeNoResultsMessage doc
+  let url = "/calculate?x=" <> show x <> "&y=" <> show y <> "&r=" <> show r
+  responseStr <- makeServerRequest url
+  case parseServerResponse responseStr of
+    Left err -> do
+      liftEffect $ log $ "Error parsing server response: " <> err
+      pure $ createErrorResult x y r
+    Right serverResponse -> do
+      let storedResult = createSuccessResult x y r serverResponse
+      liftEffect $ addResultToTable storedResult doc
+      liftEffect $ storeResult storedResult
+      pure storedResult
+
+makeServerRequest :: String -> Aff String
+makeServerRequest url = do
+  liftEffect $ log $ "Отправляем запрос: " <> url
+  -- Используем простой fetch через Aff
+  _fetchAff url
+
+
+
+createSuccessResult :: Number -> Number -> Number -> ServerResponse -> StoredResult
+createSuccessResult x y r serverResponse =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: serverResponse.now
+    , execTime: show serverResponse.time <> " ns"
+    , result: show serverResponse.result
+    }
+
+createErrorResult :: Number -> Number -> Number -> StoredResult
+createErrorResult x y r =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: "N/A"
+    , execTime: "N/A"
+    , result: "network error"
+    }
+
+-- Работа с DOM
+removeNoResultsMessage :: Document -> Effect Unit
+removeNoResultsMessage doc = do
+  let parentNode = toParentNode doc
+  maybeNoResults <- querySelector (QuerySelector ".no-results") parentNode
+  case maybeNoResults of
+    Just element -> removeElement (toNode element)
+    Nothing -> pure unit
+
+-- Вспомогательная функция для извлечения данных из StoredResult
+unwrapResult :: StoredResult -> { x :: Number, y :: Number, r :: Number, time :: String, execTime :: String, result :: String }
+unwrapResult (StoredResult r) = r
+
+addResultToTable :: StoredResult -> Document -> Effect Unit
+addResultToTable storedResult doc = do
+  let result = unwrapResult storedResult
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeTbody <- getElementById "results-body" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeTbody of
+    Just tbody -> do
+      row <- createElement "tr" doc
+
+      let cells = [ show result.x, show result.y, show result.r,
+                    result.result, result.time, result.execTime ]
+
+      for_ cells $ \cellText -> do
+        cell <- createElement "td" doc
+        setTextContent cellText (toNode cell)
+        void $ appendChild (toNode cell) (toNode row)
+
+      -- Добавляем класс в зависимости от результата
+      if result.result == "true" then
+        setAttribute "class" "hit" row
+      else
+        setAttribute "class" "miss" row
+
+      -- Вставляем в начало таблицы
+      firstChild' <- firstChild (toNode tbody)
+      case firstChild' of
+        Just child -> void $ insertBefore (toNode row) child (toNode tbody)
+        Nothing -> void $ appendChild (toNode row) (toNode tbody)
+    Nothing -> log "Таблица результатов не найдена"
+
+
+storeResult :: StoredResult -> Effect Unit
+storeResult result = do
+  previous <- _getItem "results"
+  let prevResults = case previous of
+        Just str -> fromMaybe [] (parseJSON str)
+        Nothing -> []
+      newResults = [result] <> prevResults
+  _setItem "results" (stringify (encodeJson newResults))
+
+restoreHistory :: Effect Unit
+restoreHistory = do
+  log "Восстанавливаем историю..."
+  maybeResults <- _getItem "results"
+  case maybeResults of
+    Just str -> case parseJSON str of
+      Just results -> do
+        log $ "Найдено записей в истории: " <> show (length results)
+        doc <- document =<< window
+        for_ results $ \result -> addResultToTable result (HTMLDocument.toDocument doc)
+      Nothing -> log "Ошибка парсинга истории"
+    Nothing -> log "История не найдена"
+
+-- JSON экземпляры для StoredResult
+instance encodeJsonStoredResult :: EncodeJson StoredResult where
+  encodeJson (StoredResult result) = encodeJson
+    { x: result.x
+    , y: result.y
+    , r: result.r
+    , time: result.time
+    , execTime: result.execTime
+    , result: result.result
+    }
+
+instance decodeJsonStoredResult :: DecodeJson StoredResult where
+  decodeJson json = do
+    obj <- decodeJson json
+    x <- obj .: "x"
+    y <- obj .: "y"
+    r <- obj .: "r"
+    time <- obj .: "time"
+    execTime <- obj .: "execTime"
+    resultStr <- obj .: "result"
+    pure $ StoredResult { x, y, r, time, execTime, result: resultStr }
+
+-- Вспомогательные функции для работы с ServerResponse
+parseServerResponse :: String -> Either String ServerResponse
+parseServerResponse str = do
+  json <- parseJsonString str
+  case decodeJson json of
+    Left jsonError -> Left (show jsonError)
+    Right response -> Right response
+
+parseJSON :: String -> Maybe (Array StoredResult)
+parseJSON str = case parseJsonString str of
+  Right json -> case decodeJson json of
+    Right arr -> Just arr
+    Left _ -> Nothing
+  Left _ -> Nothing
+
+foreign import parseJsonString :: String -> Either String Json
+foreign import removeElement :: Node -> Effect Unit
+
+-- Foreign imports для localStorage
+foreign import _getItem :: String -> Effect (Maybe String)
+foreign import _setItem :: String -> String -> Effect Unit
+
+-- Foreign import для alert
+foreign import alert :: String -> Effect Unit
+-- Заменяем на простую версию для Aff
+foreign import _fetchAff :: String -> Aff String
+foreign import preventDefault :: Event -> Effect Unit
+
+18:07 build
+module Main where
+
+import Prelude
+
+import Control.Monad.Reader (ReaderT)
+import Data.Argonaut (class DecodeJson, class EncodeJson, Json, decodeJson, encodeJson, stringify, (.:))
+import Data.Either (Either(..))
+import Data.Traversable (for_, traverse, traverse_)
+import Data.Array (catMaybes, length, mapMaybe, nub, filter)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Number (fromString)
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import Effect.Ref (Ref)
+import Effect.Ref as Ref
+import Web.DOM.Document (Document, createElement, toParentNode)
+import Web.HTML.HTMLInputElement (checked, fromElement, value)
+import Web.DOM.Element (fromNode, getAttribute, setAttribute, toEventTarget, toNode)
+import Web.DOM.Element (toParentNode) as Element
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.DOM.Node (Node, appendChild, firstChild, insertBefore, textContent, setTextContent)
+import Web.DOM.ParentNode (QuerySelector(..), querySelector, querySelectorAll)
+import Web.Event.Event (EventType(..))
+import Web.Event.EventTarget (addEventListener, eventListener)
+import Web.HTML (window)
+import Web.HTML.Window (document)
+import Web.HTML.HTMLDocument as HTMLDocument
+import Web.DOM.NodeList (toArray) as NodeList
+import Web.Event.Internal.Types (Event)
+
+
+-- Типы данных
+type AppState =
+  { x :: Number
+  , y :: Maybe Number
+  , r :: Array Number
+  }
+
+initAppState :: Effect (Ref AppState)
+initAppState = Ref.new { x: 0.0, y: Nothing, r: [] }
+
+type ServerResponse =
+  { result :: Boolean
+  , now :: String
+  , time :: Number
+  }
+
+-- Используем newtype вместо type для StoredResult
+newtype StoredResult = StoredResult
+  { x :: Number
+  , y :: Number
+  , r :: Number
+  , time :: String
+  , execTime :: String
+  , result :: String
+  }
+
+-- ReaderT монада для управления состоянием
+type AppM = ReaderT AppState Aff
+
+-- Инициализация приложения
+main :: Effect Unit
+main = do
+  log "Starting PureScript app..."
+  htmlDoc <- document =<< window   -- теперь htmlDoc :: HTMLDocument
+  let doc = HTMLDocument.toDocument htmlDoc
+  appStateRef <- initAppState
+
+  initXInput appStateRef
+  initYButtons appStateRef doc
+  initRCheckboxes appStateRef doc
+  initFormSubmit appStateRef
+
+  log "Initialization complete."
+
+initialAppState :: AppState
+initialAppState = { x: 0.0, y: Nothing, r: [] }
+
+initApplication :: HTMLDocument.HTMLDocument -> AppM Unit
+initApplication doc = do
+  liftEffect $ log "Инициализация приложения..."
+  liftEffect $ initEventHandlers doc
+  liftEffect restoreHistory
+  liftEffect $ log "Приложение инициализировано!"
+
+-- Обработчики событий
+initEventHandlers :: HTMLDocument.HTMLDocument -> Effect Unit
+initEventHandlers htmlDoc = do
+  log "Инициализация обработчиков событий..."
+  let doc = HTMLDocument.toDocument htmlDoc
+  appStateRef <- initAppState
+  initXInput appStateRef
+  initYButtons appStateRef doc
+  initRCheckboxes appStateRef doc
+  initFormSubmit appStateRef
+
+initXInput :: Ref AppState -> Effect Unit
+initXInput appStateRef = do
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeElement of
+    Nothing -> log "x input not found"
+    Just element -> do
+      let maybeHtmlInput = fromElement element
+      case maybeHtmlInput of
+        Nothing -> log "x is not input"
+        Just htmlInput -> do
+          listener <- eventListener \_ -> do
+            val <- value htmlInput
+            let parsed = fromMaybe 0.0 (parseNumber val)
+            Ref.modify_ (_ { x = parsed }) appStateRef
+          void $ addEventListener (EventType "input") listener false (toEventTarget element)
+
+
+getXValue :: Effect Number
+getXValue = do
+  doc <- document =<< window
+  maybeElement <- getElementById "x" (HTMLDocument.toNonElementParentNode doc)
+  case maybeElement of
+    Nothing -> pure 0.0
+    Just element -> do
+      let maybeHtmlInput = fromElement element  -- чистая функция, не монадическая
+      case maybeHtmlInput of
+        Nothing -> pure 0.0
+        Just htmlInput -> do
+          currentValue <- value htmlInput
+          pure $ fromMaybe 0.0 (parseNumber currentValue)
+
+initYButtons :: Ref AppState -> Document -> Effect Unit
+initYButtons appStateRef doc = do
+  nodeList <- querySelectorAll (QuerySelector ".y-btn") (toParentNode doc)
+  nodes <- NodeList.toArray nodeList
+  let buttons = mapMaybe fromNode nodes  -- Преобразуем Node в Element
+  traverse_ (\btnElement -> do
+    listener <- eventListener \_ -> do
+      maybeVal <- getAttribute "data-value" btnElement
+      case maybeVal of
+        Nothing -> pure unit
+        Just valStr -> do
+          let parsed = parseNumber valStr
+          case parsed of
+            Nothing -> pure unit
+            Just yNum -> do
+              -- обновляем состояние
+              Ref.modify_ (_ { y = Just yNum }) appStateRef
+              -- визуально отмечаем выбранную кнопку
+              setAttribute "active" "true" btnElement
+              log $ "Selected Y = " <> show yNum
+    void $ addEventListener (EventType "click") listener false (toEventTarget btnElement)
+  ) buttons
+
+initRCheckboxes :: Ref AppState -> Document -> Effect Unit
+initRCheckboxes appStateRef doc = do
+  nodeList <- querySelectorAll (QuerySelector ".r-checkbox") (toParentNode doc)
+  nodes <- NodeList.toArray nodeList
+  let checkboxes = mapMaybe fromNode nodes  -- Преобразуем Node в Element
+  traverse_ (\cbElement -> do
+    let maybeHtmlInput = fromElement cbElement
+    case maybeHtmlInput of
+      Nothing -> pure unit
+      Just htmlInput -> do
+        listener <- eventListener \_ -> do
+          isChecked <- checked htmlInput
+          maybeVal <- getAttribute "value" cbElement
+          case maybeVal >>= parseNumber of
+            Nothing -> pure unit
+            Just rVal -> do
+              Ref.modify_ (\st ->
+                let newR = if isChecked
+                           then nub (st.r <> [rVal])
+                           else filter (_ /= rVal) st.r
+                in st { r = newR }
+              ) appStateRef
+        void $ addEventListener (EventType "change") listener false (toEventTarget cbElement)
+  ) checkboxes
+
+initFormSubmit :: Ref AppState -> Effect Unit
+initFormSubmit appStateRef = do
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeForm <- getElementById "form" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeForm of
+    Nothing -> log "Form not found"
+    Just form -> do
+      listener <- eventListener \e -> do
+        preventDefault e
+        state <- Ref.read appStateRef
+        case validateState state of
+          Left err -> alert err
+          Right _ -> do
+            for_ state.r \rVal -> do
+              launchAff_ do
+                void $ processRequest state.x (fromMaybe 0.0 state.y) rVal (HTMLDocument.toDocument htmlDoc)
+                liftEffect $ log $ "Request processed for R=" <> show rVal
+      void $ addEventListener (EventType "submit") listener false (toEventTarget form)
+
+
+-- Получение текущего состояния
+getCurrentState :: Document -> Aff AppState
+getCurrentState doc = do
+  x <- liftEffect $ getXValue
+  y <- liftEffect $ getYValue doc
+  r <- liftEffect $ getRValues doc
+  pure { x, y, r }
+
+
+getYValue :: Document -> Effect (Maybe Number)
+getYValue doc = do
+  let parentNode = toParentNode doc
+  maybeActiveBtn <- querySelector (QuerySelector ".y-btn[active=\"true\"]") parentNode
+  case maybeActiveBtn of
+    Just btn -> do
+      text <- textContent (toNode btn)
+      pure $ parseNumber text
+    Nothing -> pure Nothing
+
+getRValues :: Document -> Effect (Array Number)
+getRValues doc = do
+  let parentNode = toParentNode doc
+  maybeContainer <- querySelector (QuerySelector "form") parentNode
+  case maybeContainer of
+    Just container -> do
+      let containerParent = Element.toParentNode container
+      nodeList <- querySelectorAll (QuerySelector "input[name=\"r\"]:checked") containerParent
+      nodes <- NodeList.toArray nodeList
+      let checkboxes = mapMaybe fromNode nodes
+      values <- traverse (\el -> do
+        value <- getAttribute "value" el
+        pure $ parseNumber =<< value) checkboxes
+      pure $ catMaybes values
+    Nothing -> pure []
+
+-- Вспомогательные функции
+parseNumber :: String -> Maybe Number
+parseNumber str = fromString str
+
+-- Валидация
+validateState :: AppState -> Either String { x :: Number, y :: Number, r :: Array Number }
+validateState state = do
+  if state.x < -5.0 || state.x > 3.0
+    then Left "X должен быть в диапазоне от -5 до 3"
+    else pure unit
+  y <- case state.y of
+    Just value -> Right value
+    Nothing -> Left "Выберите значение Y"
+  if state.r == []
+    then Left "Выберите хотя бы одно значение R"
+    else pure unit
+  Right { x: state.x, y, r: state.r }
+
+-- Обработка запросов
+processRequest :: Number -> Number -> Number -> Document -> Aff StoredResult
+processRequest x y r doc = do
+  liftEffect $ removeNoResultsMessage doc
+  let url = "/calculate?x=" <> show x <> "&y=" <> show y <> "&r=" <> show r
+  responseStr <- makeServerRequest url
+  case parseServerResponse responseStr of
+    Left err -> do
+      liftEffect $ log $ "Error parsing server response: " <> err
+      pure $ createErrorResult x y r
+    Right serverResponse -> do
+      let storedResult = createSuccessResult x y r serverResponse
+      liftEffect $ addResultToTable storedResult doc
+      liftEffect $ storeResult storedResult
+      pure storedResult
+
+makeServerRequest :: String -> Aff String
+makeServerRequest url = do
+  liftEffect $ log $ "Отправляем запрос: " <> url
+  -- Используем простой fetch через Aff
+  _fetchAff url
+
+
+
+createSuccessResult :: Number -> Number -> Number -> ServerResponse -> StoredResult
+createSuccessResult x y r serverResponse =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: serverResponse.now
+    , execTime: show serverResponse.time <> " ns"
+    , result: show serverResponse.result
+    }
+
+createErrorResult :: Number -> Number -> Number -> StoredResult
+createErrorResult x y r =
+  StoredResult
+    { x: x
+    , y: y
+    , r: r
+    , time: "N/A"
+    , execTime: "N/A"
+    , result: "network error"
+    }
+
+-- Работа с DOM
+removeNoResultsMessage :: Document -> Effect Unit
+removeNoResultsMessage doc = do
+  let parentNode = toParentNode doc
+  maybeNoResults <- querySelector (QuerySelector ".no-results") parentNode
+  case maybeNoResults of
+    Just element -> removeElement (toNode element)
+    Nothing -> pure unit
+
+-- Вспомогательная функция для извлечения данных из StoredResult
+unwrapResult :: StoredResult -> { x :: Number, y :: Number, r :: Number, time :: String, execTime :: String, result :: String }
+unwrapResult (StoredResult r) = r
+
+addResultToTable :: StoredResult -> Document -> Effect Unit
+addResultToTable storedResult doc = do
+  let result = unwrapResult storedResult
+  htmlDoc <- document =<< window  -- Получаем HTMLDocument напрямую
+  maybeTbody <- getElementById "results-body" (HTMLDocument.toNonElementParentNode htmlDoc)
+  case maybeTbody of
+    Just tbody -> do
+      row <- createElement "tr" doc
+
+      let cells = [ show result.x, show result.y, show result.r,
+                    result.result, result.time, result.execTime ]
+
+      for_ cells $ \cellText -> do
+        cell <- createElement "td" doc
+        setTextContent cellText (toNode cell)
+        void $ appendChild (toNode cell) (toNode row)
+
+      -- Добавляем класс в зависимости от результата
+      if result.result == "true" then
+        setAttribute "class" "hit" row
+      else
+        setAttribute "class" "miss" row
+
+      -- Вставляем в начало таблицы
+      firstChild' <- firstChild (toNode tbody)
+      case firstChild' of
+        Just child -> void $ insertBefore (toNode row) child (toNode tbody)
+        Nothing -> void $ appendChild (toNode row) (toNode tbody)
+    Nothing -> log "Таблица результатов не найдена"
+
+
+storeResult :: StoredResult -> Effect Unit
+storeResult result = do
+  previous <- _getItem "results"
+  let prevResults = case previous of
+        Just str -> fromMaybe [] (parseJSON str)
+        Nothing -> []
+      newResults = [result] <> prevResults
+  _setItem "results" (stringify (encodeJson newResults))
+
+restoreHistory :: Effect Unit
+restoreHistory = do
+  log "Восстанавливаем историю..."
+  maybeResults <- _getItem "results"
+  case maybeResults of
+    Just str -> case parseJSON str of
+      Just results -> do
+        log $ "Найдено записей в истории: " <> show (length results)
+        doc <- document =<< window
+        for_ results $ \result -> addResultToTable result (HTMLDocument.toDocument doc)
+      Nothing -> log "Ошибка парсинга истории"
+    Nothing -> log "История не найдена"
+
+-- JSON экземпляры для StoredResult
+instance encodeJsonStoredResult :: EncodeJson StoredResult where
+  encodeJson (StoredResult result) = encodeJson
+    { x: result.x
+    , y: result.y
+    , r: result.r
+    , time: result.time
+    , execTime: result.execTime
+    , result: result.result
+    }
+
+instance decodeJsonStoredResult :: DecodeJson StoredResult where
+  decodeJson json = do
+    obj <- decodeJson json
+    x <- obj .: "x"
+    y <- obj .: "y"
+    r <- obj .: "r"
+    time <- obj .: "time"
+    execTime <- obj .: "execTime"
+    resultStr <- obj .: "result"
+    pure $ StoredResult { x, y, r, time, execTime, result: resultStr }
+
+-- Вспомогательные функции для работы с ServerResponse
+parseServerResponse :: String -> Either String ServerResponse
+parseServerResponse str = do
+  json <- parseJsonString str
+  case decodeJson json of
+    Left jsonError -> Left (show jsonError)
+    Right response -> Right response
+
+parseJSON :: String -> Maybe (Array StoredResult)
+parseJSON str = case parseJsonString str of
+  Right json -> case decodeJson json of
+    Right arr -> Just arr
+    Left _ -> Nothing
+  Left _ -> Nothing
+
+foreign import parseJsonString :: String -> Either String Json
+foreign import removeElement :: Node -> Effect Unit
+
+-- Foreign imports для localStorage
+foreign import _getItem :: String -> Effect (Maybe String)
+foreign import _setItem :: String -> String -> Effect Unit
+
+-- Foreign import для alert
+foreign import alert :: String -> Effect Unit
+-- Заменяем на простую версию для Aff
+foreign import _fetchAff :: String -> Aff String
+foreign import preventDefault :: Event -> Effect Unit

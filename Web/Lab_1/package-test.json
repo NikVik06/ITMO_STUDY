@@ -1,0 +1,21 @@
+{
+  "name": "web_lab_1_4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:less": "lessc static/styles/style.less static/styles/style.css",
+    "build:purs": "spago build",
+    "build:js": "rollup --config",
+    "format": "prettier --write static/**/*.{js,html,css} src/**/*.{js,purs}",
+    "dev:less": "npm run build:less -- --watch",
+    "build": "npm run build:purs && npm run build:js && npm run build:less",
+    "dev": "npm run build:purs && npm run build:js -- --watch"
+  },
+  "devDependencies": {
+    "less": "^4.0.0",
+    "prettier": "^3.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-purs": "^1.0.35"
+  }
+}
