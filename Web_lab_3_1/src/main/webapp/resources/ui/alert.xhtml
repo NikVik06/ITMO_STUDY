@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:cc="http://java.sun.com/jsf/composite"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+
+<cc:interface>
+    <cc:attribute name="type" required="true"
+                  type="java.lang.String"
+                  default="info" />
+    <cc:attribute name="title" required="true"
+                  type="java.lang.String" />
+    <cc:attribute name="closable" required="false"
+                  type="java.lang.Boolean" default="false" />
+    <cc:attribute name="icon" required="false"
+                  type="java.lang.Boolean" default="true" />
+    <cc:attribute name="style" required="false" />
+    <cc:attribute name="styleClass" required="false" />
+</cc:interface>
+
+<cc:implementation>
+    <div id="alert_#{cc.clientId}"
+         class="ui-alert ui-alert-#{cc.attrs.type} #{cc.attrs.styleClass}"
+         style="#{cc.attrs.style}">
+        <div class="ui-alert-header">
+            <c:if test="#{cc.attrs.icon}">
+                <span class="ui-alert-icon">
+                    <c:choose>
+                        <c:when test="#{cc.attrs.type == 'success'}">✓</c:when>
+                        <c:when test="#{cc.attrs.type == 'error'}">✗</c:when>
+                        <c:when test="#{cc.attrs.type == 'warning'}">⚠️</c:when>
+                        <c:when test="#{cc.attrs.type == 'info'}">ℹ️</c:when>
+                    </c:choose>
+                </span>
+            </c:if>
+            <strong class="ui-alert-title">#{cc.attrs.title}</strong>
+            <c:if test="#{cc.attrs.closable}">
+                <button type="button" class="ui-alert-close"
+                        onclick="this.closest('.ui-alert').remove()">
+                    ×
+                </button>
+            </c:if>
+        </div>
+        <div class="ui-alert-body">
+            <cc:insertChildren />
+        </div>
+    </div>
+</cc:implementation>
+</html>

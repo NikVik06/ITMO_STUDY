@@ -1,0 +1,6 @@
+model\PointResult.class
+beans\AreaBean.class
+validators\NumberValidator.class
+beans\ClockBean.class
+beans\ResultsManager.class
+dao\DatabaseManager.class
