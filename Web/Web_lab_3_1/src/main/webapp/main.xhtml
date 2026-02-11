@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:custom="http://java.sun.com/jsf/composite/ui"
+      xmlns:c="http://java.sun.com/jsp/jstl/core">
+<h:head>
+    <title>Area Check - Main</title>
+    <h:outputStylesheet library="ui" name="alert.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            margin: 20px auto;
+            border-radius: 15px;
+            max-width: 1200px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .header h2 {
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            color: #2c3e50;
+        }
+        .header p {
+            margin: 0;
+            font-size: 20px;
+            color: #7f8c8d;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .form-group {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(236, 240, 241, 0.5);
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        .input-field {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .input-field:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+        }
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: normal;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #ecf0f1;
+            transition: all 0.3s;
+            margin-bottom: 0;
+        }
+        .radio-group label:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        .radio-group input[type='radio'] {
+            transform: scale(1.2);
+        }
+        .form-select {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s;
+            background: white;
+        }
+        .form-select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+            transform: translateY(-2px);
+        }
+        .btn {
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #graph-container {
+            margin: 20px 0;
+            padding: 25px;
+            background: rgba(236, 240, 241, 0.5);
+            border-radius: 15px;
+            text-align: center;
+        }
+        #graph-container h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        #areaCanvas {
+            border: 2px solid #34495e;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            background: white;
+            cursor: crosshair;
+        }
+        .graph-message {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .graph-success {
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+        .graph-error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+        .graph-coords {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .results-table th,
+        .results-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #ecf0f1;
+            font-size: 16px;
+        }
+        .results-table th {
+            background: #34495e;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 18px;
+        }
+        .hit {
+            background: rgba(46, 204, 113, 0.15);
+        }
+        .miss {
+            background: rgba(231, 76, 60, 0.15);
+        }
+        .no-results {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 18px;
+            padding: 30px;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .validation-error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            padding: 5px 10px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 4px;
+            display: block;
+        }
+        .field-error {
+            border-color: #e74c3c !important;
+        }
+        small {
+            display: block;
+            margin-top: 5px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .alert-container {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            transition: all 0.3s ease;
+        }
+
+        .ui-alert.compact {
+            padding: 12px 15px;
+            margin: 10px 0;
+        }
+
+        .compact-result {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .compact-result span {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .compact-result strong {
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .ui-alert {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            .header {
+                padding: 20px;
+                margin: 10px auto;
+            }
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            .radio-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .compact-result {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-start;
+            }
+
+            .compact-result span {
+                display: block;
+                width: 100%;
+            }
+        }
+    </style>
+</h:head>
+<h:body>
+    <div class="container">
+        <div class="header">
+            <h2>Проверка попадания точки в область</h2>
+            <p>Николенко Максим Викторович, P3215, Вариант 27888</p>
+        </div>
+
+        <div class="alert-container">
+            <custom:alert type="info" title="Инструкция" closable="true" icon="true">
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Выберите координату X из списка или кликните на график</li>
+                    <li>Введите координату Y в поле ввода (от -3 до 5)</li>
+                    <li>Выберите радиус R из выпадающего списка</li>
+                    <li>Нажмите "Проверить" или кликните на график для проверки точки</li>
+                </ul>
+            </custom:alert>
+        </div>
+
+        <div class="alert-container">
+            <h:panelGroup id="resultAlert" rendered="#{not empty areaBean.results}">
+                <c:set var="lastResult" value="#{areaBean.results[areaBean.results.size()-1]}" />
+                <custom:alert type="#{lastResult.hit ? 'success' : 'error'}"
+                              title="#{lastResult.hit ? '✓ Попадание' : '✗ Промах'}"
+                              closable="true" icon="false"
+                              styleClass="compact">
+                    <div class="compact-result">
+                        <span>X: <strong>#{lastResult.x}</strong></span>
+                        <span>Y: <strong>#{lastResult.y}</strong></span>
+                        <span>R: <strong>#{lastResult.r}</strong></span>
+                        <span style="font-weight: bold; color: #{lastResult.hit ? '#27ae60' : '#e74c3c'}">
+                            #{lastResult.hit ? 'Попадает' : 'Не попадает'}
+                        </span>
+                    </div>
+                </custom:alert>
+            </h:panelGroup>
+        </div>
+
+        <div class="grid-container">
+            <div>
+                <h:form id="mainForm">
+                    <h:inputHidden id="pointsData" value="#{areaBean.pointsJson}"/>
+                    <h3>Введите координаты:</h3>
+
+                    <div class="form-group">
+                        <label>Координата X:</label>
+                        <div class="radio-group">
+                            <h:selectOneRadio id="xInput" value="#{areaBean.x}" layout="pageDirection"
+                                              required="true"
+                                              requiredMessage="Пожалуйста, выберите значение X">
+                                <f:selectItem itemValue="-5" itemLabel="-5"/>
+                                <f:selectItem itemValue="-4" itemLabel="-4"/>
+                                <f:selectItem itemValue="-3" itemLabel="-3"/>
+                                <f:selectItem itemValue="-2" itemLabel="-2"/>
+                                <f:selectItem itemValue="-1" itemLabel="-1"/>
+                                <f:selectItem itemValue="0" itemLabel="0"/>
+                                <f:selectItem itemValue="1" itemLabel="1"/>
+                                <f:selectItem itemValue="2" itemLabel="2"/>
+                                <f:selectItem itemValue="3" itemLabel="3"/>
+                            </h:selectOneRadio>
+                        </div>
+                        <h:message for="xInput" styleClass="validation-error"/>
+                        <small>Допустимый диапазон: от -5 до 3</small>
+                    </div>
+
+                    <div class="form-group">
+                        <h:outputLabel for="yInput" value="Координата Y:"/>
+                        <h:inputText id="yInput" value="#{areaBean.y}"
+                                     styleClass="input-field #{empty facesContext.getMessageList('mainForm:yInput') ? '' : 'field-error'}"
+                                     required="true"
+                                     requiredMessage="Пожалуйста, введите значение Y">
+                            <f:validateDoubleRange minimum="-3" maximum="5"
+                                                   minimumMessage="Y должен быть не меньше -3"
+                                                   maximumMessage="Y должен быть не больше 5"/>
+                        </h:inputText>
+                        <h:message for="yInput" styleClass="validation-error"/>
+                        <small>Допустимый диапазон: от -3 до 5</small>
+                    </div>
+
+                    <div class="form-group">
+                        <h:outputLabel for="rInput" value="Радиус R:"/>
+                        <h:selectOneMenu id="rInput" value="#{areaBean.r}" styleClass="form-select">
+                            <f:selectItem itemLabel="Выберите R" itemValue=""
+                                          itemDisabled="true" noSelectionOption="true"/>
+                            <f:selectItem itemValue="1" itemLabel="1"/>
+                            <f:selectItem itemValue="2" itemLabel="2"/>
+                            <f:selectItem itemValue="3" itemLabel="3"/>
+                            <f:selectItem itemValue="4" itemLabel="4"/>
+                            <f:selectItem itemValue="5" itemLabel="5"/>
+                        </h:selectOneMenu>
+                        <h:message for="rInput" style="color: red"/>
+                    </div>
+
+                    <div class="btn-group">
+                        <h:commandButton id="checkPoint" value="Проверить" action="#{areaBean.checkPoint}" styleClass="btn">
+                            <f:ajax execute="@form" render=":mainForm:resultsSection :mainForm:pointsData resultAlert :mainForm:graph-message"/>
+                        </h:commandButton>
+                    </div>
+                </h:form>
+
+                <h:form id="clearForm">
+                    <h:commandButton id="clearResults" value="Очистить" action="#{areaBean.clearResults}"
+                                     styleClass="btn">
+                        <f:ajax execute="@form" render=":mainForm:resultsSection :mainForm:pointsData resultAlert :mainForm:graph-message"/>
+                    </h:commandButton>
+                </h:form>
+
+                <h:form id="graphForm" style="display: none;">
+                    <h:inputHidden id="graphX" value="#{areaBean.graphX}"/>
+                    <h:inputHidden id="graphY" value="#{areaBean.graphY}"/>
+                    <h:inputHidden id="graphR" value="#{areaBean.r}"/>
+                    <h:commandButton id="graphSubmit" action="#{areaBean.checkPointFromGraph}">
+                        <f:ajax execute="@form"
+                                render=":mainForm:resultsSection :mainForm:pointsData resultAlert :mainForm:graph-message"/>
+                    </h:commandButton>
+                </h:form>
+
+                <h:form>
+                    <h:commandButton value="На главную" action="index" styleClass="btn"/>
+                </h:form>
+            </div>
+
+            <div>
+                <div id="graph-container">
+                    <h3>Область проверки</h3>
+                    <canvas id="areaCanvas" width="400" height="400"></canvas>
+                    <div id="graph-message" class="graph-message">
+                        Выберите радиус R и кликните на график для выбора точки
+                    </div>
+                    <div id="graph-coords" class="graph-coords">
+                        Координаты с графика: X: не выбрано, Y: не выбрано
+                    </div>
+                </div>
+
+                <h:panelGroup id="resultsSection">
+                    <div id="results">
+                        <h3>История проверок</h3>
+                        <h:dataTable value="#{areaBean.results}" var="result"
+                                     styleClass="results-table"
+                                     rendered="#{not empty areaBean.results}">
+                            <h:column>
+                                <f:facet name="header">X</f:facet>
+                                <h:outputText value="#{result.x}">
+                                    <f:convertNumber maxFractionDigits="3"/>
+                                </h:outputText>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Y</f:facet>
+                                <h:outputText value="#{result.y}">
+                                    <f:convertNumber maxFractionDigits="3"/>
+                                </h:outputText>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">R</f:facet>
+                                #{result.r}
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Результат</f:facet>
+                                <h:outputText value="#{result.hit ? 'Попадание' : 'Промах'}"
+                                              style="color: #{result.hit ? 'green' : 'red'}"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Время</f:facet>
+                                <h:outputText value="#{result.timestamp}">
+                                    <f:convertDateTime pattern="dd.MM.yyyy HH:mm:ss"/>
+                                </h:outputText>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Время выполнения</f:facet>
+                                #{result.executionTime} нс
+                            </h:column>
+                        </h:dataTable>
+                        <h:outputText value="Пока нет результатов. Введите данные и нажмите 'Проверить'"
+                                      rendered="#{empty areaBean.results}"
+                                      styleClass="no-results"/>
+                    </div>
+                </h:panelGroup>
+            </div>
+        </div>
+    </div>
+
+    <h:outputScript name="js/canvas.js"/>
+    <h:outputScript name="js/form-styling.js"/>
+
+    <h:outputScript>
+        <![CDATA[
+            const yInput = document.querySelector('[id$="yInput"]');
+            if (yInput) {
+                yInput.addEventListener('blur', function() {
+                    const value = this.value.trim();
+                    if (value !== '') {
+                        const numValue = parseFloat(value);
+                        if (isNaN(numValue) || numValue < -3 || numValue > 5) {
+                            this.classList.add('field-error');
+                        } else {
+                            this.classList.remove('field-error');
+                        }
+                    }
+                });
+            }
+        });
+        ]]>
+    </h:outputScript>
+
+</h:body>
+</html>

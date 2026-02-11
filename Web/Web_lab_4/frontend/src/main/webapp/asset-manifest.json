@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/area-backend/static/css/main.741463e2.css",
+    "main.js": "/area-backend/static/js/main.0af677a3.js",
+    "index.html": "/area-backend/index.html",
+    "main.741463e2.css.map": "/area-backend/static/css/main.741463e2.css.map",
+    "main.0af677a3.js.map": "/area-backend/static/js/main.0af677a3.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.741463e2.css",
+    "static/js/main.0af677a3.js"
+  ]
+}
