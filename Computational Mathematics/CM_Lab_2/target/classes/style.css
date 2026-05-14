@@ -1,0 +1,39 @@
+.root {
+    -fx-font-family: "Segoe UI";
+}
+
+.button {
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-opacity: 0.9;
+}
+
+.text-field {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-border-color: #ddd;
+}
+
+.text-field:focused {
+    -fx-border-color: #3498db;
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 10 0 0 0;
+}
+
+.tab {
+    -fx-background-radius: 5 5 0 0;
+    -fx-padding: 8 20;
+}
+
+.tab:selected {
+    -fx-background-color: #3498db;
+}
+
+.tab:selected .tab-label {
+    -fx-text-fill: white;
+}
